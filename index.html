@@ -45,19 +45,22 @@
     </div>
 
     <script>
+      
       var appID = "59E23608FABA109B7153953F2";
       var baseUrl = "http://developer.trimet.org/ws/v2/vehicles";
-      var data = {routes:"9", appID:appID};
-      var vehicles = [];
+      var params = {routes:"9", appID:appID};
+      //var data = {appID:appID};
       
       var map = initmap("map");
       var vehicles = new L.geoJson().addTo(map);
       
-      $.getJSON(baseUrl, data ,function( data ) {
+      $.getJSON(baseUrl, params ,function(data) {
           var results = data.resultSet.vehicle;
           vehicles.clearLayers();
 
           for(var i = 0; i < results.length; i++) {
+              console.log(results[i]);
+              //construct geojson for each vehicle returned from TriMet api
               var vehicle = {
                   "type": "Feature",
                   "geometry": {
@@ -67,10 +70,19 @@
                       ]
                   },
                   "properties": {
+                      "signMessage":results[i].signMessageLong,
                       "routeNumber":results[i].routeNumber
                   }
               };
-              vehicles.addLayer(L.geoJson(vehicle));
+              //create leaflet object to add to vehicles layer
+              var geoJson = L.geoJson(
+                  vehicle, {
+                      onEachFeature: function (feature, layer) {
+                          layer.bindPopup(feature.properties.signMessage);
+                      }
+                  }
+              );
+              vehicles.addLayer(geoJson);
           }
       });
 
