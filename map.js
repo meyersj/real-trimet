@@ -1,7 +1,5 @@
 
 
-
-
 function Map() {
 
     this.map = null;
@@ -25,7 +23,8 @@ function Map() {
         // start the map in South-East England
         this.map.setView(new L.LatLng(45.51, -122.678),12);
         this.map.addLayer(osm);
-         
+       
+        //create empty layer for vehicle locations
         this.vehicles = new L.geoJson().addTo(this.map);
     }
 
@@ -35,14 +34,13 @@ function Map() {
 
     function buildPopup(feature) {
         var message = feature.properties.signMessage;
-        var load = feature.properties.loadPercentage;
-        return message + " <b>" + load + "</b>";
+        //var load = feature.properties.loadPercentage;
+        //return message + " <b>" + load + "</b>";
+        return message;
     }
 
-
-
-    this.addVehicle = function(data) {
-        //construct geojson for each vehicle returned from TriMet api
+    //construct geojson for each vehicle returned from TriMet api
+    function buildVehicleGeoJSON(data) {
         var vehicle = {
           "type": "Feature",
           "geometry": {
@@ -57,28 +55,23 @@ function Map() {
               "loadPercentage":data.loadPercentage
           }
         };
-        
-        //create leaflet object to add to vehicles layer
-        var geoJson = L.geoJson(
-          vehicle, {
-              onEachFeature: function (feature, layer) {
-                  layer.bindPopup(buildPopup(feature));
-              }
-          }
+        return vehicle;
+    }
+
+    //create leaflet object and add to vehicles geoJSON layer
+    this.addVehicle = function(data) {
+                var geoJson = new L.geoJson(
+            buildVehicleGeoJSON(data), {
+                onEachFeature: function (feature, layer) {
+                    layer.bindPopup(buildPopup(feature));
+                }
+            }
         );
+        
         this.vehicles.addLayer(geoJson);
     }
 
-
-
-
 }
-
-
-
-
-
-
 
 
 

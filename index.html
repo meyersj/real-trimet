@@ -47,6 +47,8 @@
         <div class="col-xs-12 col-sm-12 col-md-12 main">
         <!-- TODO replace these breaks with css on body -->
           <br><br><br><br>
+          
+          <!-- dropdown filters -->
           <table>
             <tr>
               <td style="padding-right:1em">
@@ -85,41 +87,89 @@
               </td>
             </tr>
           </table>
+
           <br>
+
+          <!-- leaflet map -->
           <div id="map" style="width:100%; height:70vh"></div>
         </div>
       </div>
     </div>
 
     <script>
-      
-      var appID = "59E23608FABA109B7153953F2";
-      var baseUrl = "http://developer.trimet.org/ws/v2/vehicles";
-      var params = {routes:"9", appID:appID};
-      
+
+      //api constant variables
+      var APPID = "59E23608FABA109B7153953F2";
+      var BASE_URL = "http://developer.trimet.org/ws";
+      var WS_VEH = "v2/vehicles";
+      var WS_ROUTES = "V1/routeConfig";
+
+
       var map = new Map();
       map.initmap("map");
+      var routes = {};
 
-      $.getJSON(baseUrl, params ,function(data) {
-          //TODO handle if error was returned from api 
-          map.clearVehicles();
-          for(var i = 0; i < data.resultSet.vehicle.length; i++) {
-              map.addVehicle(data.resultSet.vehicle[i]);
-          }  
-      });
+
+      function updateVehicles(route) {
+          var url = BASE_URL + "/" + WS_VEH;
+          var params = {appID:APPID};
+          if(route !== null) {
+              params["routes"] = route;
+          }
+
+          console.log(params);
+          $.getJSON(url, params ,function(data) {
+              console.log(data);
+              
+              //TODO handle if error was returned from api 
+              map.clearVehicles();
+              
+              if(data.resultSet.hasOwnProperty('vehicle')) {
+                  for(var i = 0; i < data.resultSet.vehicle.length; i++) {
+                      map.addVehicle(data.resultSet.vehicle[i]);
+                  }
+              }
+              else {
+                  alert("No vehicle locations available for that route");
+              }
+          });
+      }
+
+      updateVehicles(null);
       
-      baseUrl = "http://developer.trimet.org/ws/V1/routeConfig";
-      params = {appID:appID, json:true};
 
       //add routes trimet is publishing data for to dropdown filter
-      $.getJSON(baseUrl, params ,function(data) {
-          routes = data.resultSet.route;
-        
-          for(var i = 0; i < routes.length; i++) {
+      //and add on click listener to update vehicles
+      //for route user selects
+
+      $.getJSON(BASE_URL + "/" + WS_ROUTES, {appID:APPID, json:true} ,function(data) {
+          routesList = data.resultSet.route;
+          
+          for(var i = 0; i < routesList.length; i++) {
+              var desc = routesList[i].desc;
+              var rte = routesList[i].route;
+              
+              //use description as key to route number
+              //this is used to retrieve route number for api call
+              routes[desc] = rte; 
+              
+              //add each route to dropdown list
               $('#filter_line').append(
-                  "<li><a href=\"#\">"+routes[i].desc+"</a></li>"
+                  "<li><a href=\"#\">"+desc+"</a></li>"
               );
           }
+
+          //each time a route is selected from dropdown make call
+          //to api with that route as a param
+          $('#filter_line a').on('click', function() {
+              var line = this.text;
+
+              //display selected line description as button text
+              $("#line_btn").text(line+' ').append('<span class="caret"></span>');
+             
+              //update vehicle markers
+              updateVehicles(routes[line]);
+          });
       });
 
     </script>
