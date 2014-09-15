@@ -25,7 +25,7 @@ function Map() {
         this.map.addLayer(osm);
        
         //create empty layer for vehicle locations
-        this.vehicles = new L.geoJson().addTo(this.map);
+        this.vehicles = new L.featureGroup().addTo(this.map);
     }
 
     this.clearVehicles = function() {
@@ -69,6 +69,10 @@ function Map() {
         );
         
         this.vehicles.addLayer(geoJson);
+    }
+
+    this.zoomToVehicles = function() {
+        this.map.fitBounds(this.vehicles.getBounds().pad(0.05));
     }
 
 }

@@ -131,6 +131,7 @@
                   for(var i = 0; i < data.resultSet.vehicle.length; i++) {
                       map.addVehicle(data.resultSet.vehicle[i]);
                   }
+                  map.zoomToVehicles();
               }
               else {
                   alert("No vehicle locations available for that route");
