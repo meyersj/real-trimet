@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>    
     <script src="map.js"></script>
+
+    <style>
+      .scrollable-menu {
+        height: auto;
+        max-height: 300px;
+        overflow-x: hidden;
+      }
+    </style>
   </head>
   
   <body>
@@ -37,9 +45,48 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-xs-12 col-sm-12 col-md-12 main">
-        <!-- replace these breaks with css on body -->
-          <br><br><br>
-          <div id="map" style="width:100%; height:70vh"></div>        
+        <!-- TODO replace these breaks with css on body -->
+          <br><br><br><br>
+          <table>
+            <tr>
+              <td style="padding-right:1em">
+                <strong>Route:</strong>
+              </td>
+              <td>
+                <div class="btn-group" role="form">
+                  <button id="line_btn" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                  All    <span class="caret"></span>
+                  </button>
+                  <ul id="filter_line" class="dropdown-menu scrollable-menu" role="menu">
+                    <li role="presentation" class="dropdown-header">Route</li>
+                    <li role="presentation"><a href="#">All</a></li>
+                    <li role="presentation" class="divider"></li>    
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding-right:1em">
+                <strong>Direction:</strong>
+              </td>
+              <td>
+                <div class="btn-group">
+                  <button id="dir_btn" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                  All    <span class="caret"></span>
+                  </button>
+                  <ul id="filter_dir" class="dropdown-menu scrollable-menu" role="menu">
+                    <li role="presentation" class="dropdown-header">Direction</li>
+                    <li role="presentation"><a href="#">All</a></li>
+                    <li role="presentation" class="divider"></li>    
+                    <li><a href="#">Inbound</a></li>
+                    <li><a href="#">Outbound</a></li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          </table>
+          <br>
+          <div id="map" style="width:100%; height:70vh"></div>
         </div>
       </div>
     </div>
@@ -49,40 +96,29 @@
       var appID = "59E23608FABA109B7153953F2";
       var baseUrl = "http://developer.trimet.org/ws/v2/vehicles";
       var params = {routes:"9", appID:appID};
-      //var data = {appID:appID};
       
-      var map = initmap("map");
-      var vehicles = new L.geoJson().addTo(map);
-      
-      $.getJSON(baseUrl, params ,function(data) {
-          var results = data.resultSet.vehicle;
-          vehicles.clearLayers();
+      var map = new Map();
+      map.initmap("map");
 
-          for(var i = 0; i < results.length; i++) {
-              console.log(results[i]);
-              //construct geojson for each vehicle returned from TriMet api
-              var vehicle = {
-                  "type": "Feature",
-                  "geometry": {
-                      "type": "Point",
-                      "coordinates":[
-                          results[i].longitude, results[i].latitude
-                      ]
-                  },
-                  "properties": {
-                      "signMessage":results[i].signMessageLong,
-                      "routeNumber":results[i].routeNumber
-                  }
-              };
-              //create leaflet object to add to vehicles layer
-              var geoJson = L.geoJson(
-                  vehicle, {
-                      onEachFeature: function (feature, layer) {
-                          layer.bindPopup(feature.properties.signMessage);
-                      }
-                  }
+      $.getJSON(baseUrl, params ,function(data) {
+          //TODO handle if error was returned from api 
+          map.clearVehicles();
+          for(var i = 0; i < data.resultSet.vehicle.length; i++) {
+              map.addVehicle(data.resultSet.vehicle[i]);
+          }  
+      });
+      
+      baseUrl = "http://developer.trimet.org/ws/V1/routeConfig";
+      params = {appID:appID, json:true};
+
+      //add routes trimet is publishing data for to dropdown filter
+      $.getJSON(baseUrl, params ,function(data) {
+          routes = data.resultSet.route;
+        
+          for(var i = 0; i < routes.length; i++) {
+              $('#filter_line').append(
+                  "<li><a href=\"#\">"+routes[i].desc+"</a></li>"
               );
-              vehicles.addLayer(geoJson);
           }
       });
 
