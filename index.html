@@ -119,11 +119,6 @@
       map.initmap();
       var routes = {};
 
-
-      //display all vehicles on page load
-      //map.updateVehicles(null);
-      
-
       //add routes trimet is publishing data for to dropdown filter
       //and add on click listener to update vehicles
       //for route user selects
@@ -147,12 +142,16 @@
 
           //each time a route is selected from dropdown make call
           //to api with that route as a param
+          
+          function setFilter(selector, text) {
+              $(selector).text(text+' ').append('<span class="caret"></span>');
+          }
           $('#filter_line a').on('click', function() {
               var rte = null;
               var text = this.text;
 
               //display selected line description as button text
-              $("#line_btn").text(text+' ').append('<span class="caret"></span>');
+              setFilter("#line_btn", text);
              
               //update vehicle markers
               if( routes.hasOwnProperty(text)) {
@@ -162,27 +161,26 @@
               map.updateVehicles();
           });
 
-
           $('#filter_dir a').on('click', function() {
               var dir = null;
               var text = this.text;
 
               //display selected direction description as button text
-              $("#dir_btn").text(text+' ').append('<span class="caret"></span>');
+              setFilter("#dir_btn", text);
              
               //update vehicle markers
               if( text == "Inbound" ) {
-                 dir = 0;
+                 dir = 1;
               }
               else if(text == "Outbound") {
-                 dir = 1;
+                 dir = 0;
               }
               map.setDirection(dir);
               map.updateVehicles();
           });
 
-
-
+          //set on click handler to track link inside vehicle popup
+          //that will zoom to vehicle
           $('#map').on('click', ".track-vehicle", function() {
               var trackBtn = $(this);
               var coord = JSON.parse(trackBtn.attr("coord"));

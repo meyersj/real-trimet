@@ -1,7 +1,7 @@
 function Map(params) {
 
     var THIS = this;
-    //this.THIS = this;
+    
     this.APPID = params.APPID;
     this.BASE_URL = params.BASE_URL;
     this.WS_VEH = params.WS_VEH;
@@ -12,7 +12,6 @@ function Map(params) {
     this.vehicles = null;
     this.rte = null;
     this.dir = null; 
-
 
     this.initmap = function() {
         // set up the map
@@ -36,27 +35,15 @@ function Map(params) {
         //create empty layer for vehicle locations
         this.vehicles = new L.featureGroup().addTo(this.map);
     }
- 
 
     function clearVehicles() {
         THIS.vehicles.clearLayers();
     } 
 
-    
-
     function buildPopup(feature, layer) {
-        //var message = feature.properties.signMessage;
-        //var route = feature.routeNumber;
-      
-        //console.log(layer._latlng.lat);
-        //map.panTo({lon: 30, lat: 50});
-                
-        //JSON.parse( [30, 50] );
-        var lat = layer._latlng.lat;
-        var lon = layer._latlng.lng;
-        var coord = "{\"lat\":" + lat + ",\"lon\":" + lon + "}";
-
-        var _coord = "coord='" + coord + "' "; 
+        var _coord = "coord='" + "{\"lat\":" + 
+            layer._latlng.lat + ",\"lon\":" + 
+            layer._latlng.lng + "}" + "' "; 
         var _route = "route=\"" + feature.properties.routeNumber + "\" "; 
         var _type = "type=\"button\" ";
         var _style = "style=\"width:100%\" ";
@@ -65,9 +52,6 @@ function Map(params) {
         var btn = "<button "+  _type + _route + _class +
             _style + _coord + ">Track</button>";
         var popup = feature.properties.signMessage + "<br>" + btn; 
-
-        //var load = feature.properties.loadPercentage;
-        //return message + " <b>" + load + "</b>";
         return popup;
     }
 
@@ -92,11 +76,7 @@ function Map(params) {
 
     //create leaflet object and add to vehicles geoJSON layer
     function addVehicle(data) {
-        var t = THIS.dir || "-";
-        console.log( t.toString() + data.direction.toString());
         if (THIS.dir == null || THIS.dir == data.direction) {
-            console.log("match");
-
             var geoJson = new L.geoJson(
                 buildVehicleGeoJSON(data), {
                     onEachFeature: function (feature, layer) {
@@ -104,23 +84,18 @@ function Map(params) {
                     }
                 }
             );
-            
             THIS.vehicles.addLayer(geoJson);
         }
-        else { console.log("no match");}
     }
 
     function zoomToVehicles() {
         THIS.map.fitBounds(THIS.vehicles.getBounds().pad(0.05));
     }
 
-
-
     this.zoomToVehicle = function(latlng) {
         THIS.map.setView(latlng, 16);
         THIS.map.closePopup();
     }
-
 
     this.setRoute = function(rte) {
         THIS.rte = rte;
@@ -130,7 +105,6 @@ function Map(params) {
         THIS.dir = dir;
     }
 
-
     this.updateVehicles = function() {
           var url = this.BASE_URL + "/" + this.WS_VEH;
           var params = {appID:this.APPID};
@@ -139,11 +113,7 @@ function Map(params) {
               params["routes"] = this.rte;
           }
 
-
-          console.log(params);
           $.getJSON(url, params ,function(data) {
-              console.log(data);
-              
               //TODO handle if error was returned from api 
               clearVehicles();
               
@@ -158,10 +128,6 @@ function Map(params) {
               }
           });
       }
-
-
-
-
 
 }
 
