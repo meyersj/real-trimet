@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>    
     <script src="map.js"></script>
+    <script src="interactions.js"></script>
 
     <style>
       .scrollable-menu {
@@ -107,39 +108,21 @@
       var WS_VEH = "v2/vehicles";
       var WS_ROUTES = "V1/routeConfig";
 
+      var params = {
+          APPID:APPID,
+          BASE_URL:BASE_URL,
+          WS_VEH:WS_VEH,
+          WS_ROUTES:WS_ROUTES,
+          map_div:"map"
+      };
 
-      var map = new Map();
-      map.initmap("map");
+      var map = new Map(params);
+      map.initmap();
       var routes = {};
 
 
-      function updateVehicles(route) {
-          var url = BASE_URL + "/" + WS_VEH;
-          var params = {appID:APPID};
-          if(route !== null) {
-              params["routes"] = route;
-          }
-
-          console.log(params);
-          $.getJSON(url, params ,function(data) {
-              console.log(data);
-              
-              //TODO handle if error was returned from api 
-              map.clearVehicles();
-              
-              if(data.resultSet.hasOwnProperty('vehicle')) {
-                  for(var i = 0; i < data.resultSet.vehicle.length; i++) {
-                      map.addVehicle(data.resultSet.vehicle[i]);
-                  }
-                  map.zoomToVehicles();
-              }
-              else {
-                  alert("No vehicle locations available for that route");
-              }
-          });
-      }
-
-      //updateVehicles(null);
+      //display all vehicles on page load
+      //map.updateVehicles(null);
       
 
       //add routes trimet is publishing data for to dropdown filter
@@ -166,15 +149,48 @@
           //each time a route is selected from dropdown make call
           //to api with that route as a param
           $('#filter_line a').on('click', function() {
-              var line = this.text;
+              var rte = null;
+              var text = this.text;
 
               //display selected line description as button text
-              $("#line_btn").text(line+' ').append('<span class="caret"></span>');
+              $("#line_btn").text(text+' ').append('<span class="caret"></span>');
              
               //update vehicle markers
-              updateVehicles(routes[line]);
+              if( routes.hasOwnProperty(text)) {
+                 rte = routes[text];
+              }
+              map.setRoute(rte);
+              map.updateVehicles();
           });
-      });
+
+
+          $('#filter_dir a').on('click', function() {
+              var dir = null;
+              var text = this.text;
+
+              //display selected line description as button text
+              $("#dir_btn").text(text+' ').append('<span class="caret"></span>');
+             
+              //update vehicle markers
+              if( text == "Inbound" ) {
+                 dir = 0;
+              }
+              else if(text == "Outbound") {
+                 dir = 1;
+              }
+              map.setDirection(dir);
+              map.updateVehicles();
+          });
+
+
+
+          $('#map').on('click', ".track-vehicle", function() {
+              var trackBtn = $(this);
+              var coord = JSON.parse(trackBtn.attr("coord"));
+              map.zoomToVehicle(coord);
+          });
+
+    });
 
     </script>
   
