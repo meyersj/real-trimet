@@ -34,7 +34,7 @@ function Map(params) {
         this.map.addLayer(osm);
 
         this.map.on('popupopen', function(e) {
-            this.map.panTo(e.popup.getLatLng());
+            THIS.map.panTo(e.popup.getLatLng());
             var btn = $($.parseHTML(e.popup.getContent()[2]));
             var btnText = btn.context.outerHTML;
             
