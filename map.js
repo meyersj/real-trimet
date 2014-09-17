@@ -6,6 +6,7 @@ function Map(params) {
     this.BASE_URL = params.BASE_URL;
     this.WS_VEH = params.WS_VEH;
     this.WS_ROUTES = params.WS_ROUTES;
+    this.WS_ARRIVALS = params.WS_ARRIVALS;
 
     this.mapDiv = params.map_div;
     this.map = null;
@@ -31,6 +32,25 @@ function Map(params) {
         // start the map in South-East England
         this.map.setView(new L.LatLng(45.51, -122.678),12);
         this.map.addLayer(osm);
+
+        this.map.on('popupopen', function(e) {
+            this.map.panTo(e.popup.getLatLng());
+            var btn = $($.parseHTML(e.popup.getContent()[2]));
+            var btnText = btn.context.outerHTML;
+            
+            //modify popup to only display button
+            //until stop name is recieved from AJAX call
+            e.popup.setContent(btnText);
+
+            var url = THIS.BASE_URL + "/" + THIS.WS_ARRIVALS;
+            var params = {appID:THIS.APPID, json:true, locIDs:btn.attr("stop")};
+            $.getJSON(url, params ,function(data) {
+                //TODO handle if more than location.length > 0 ???
+                var desc = data.resultSet.location[0].desc;
+                e.popup.setContent(desc + "<br>" + btnText);
+            });
+
+        });
         
         //create empty layer for vehicle locations
         this.vehicles = new L.featureGroup().addTo(this.map);
@@ -39,7 +59,7 @@ function Map(params) {
     function clearVehicles() {
         THIS.vehicles.clearLayers();
     } 
-
+    
     function buildPopup(feature, layer) {
         var _coord = "coord='" + "{\"lat\":" + 
             layer._latlng.lat + ",\"lon\":" + 
@@ -48,10 +68,12 @@ function Map(params) {
         var _type = "type=\"button\" ";
         var _style = "style=\"width:100%\" ";
         var _class = "class=\"track-vehicle btn btn-default btn-xs\" ";
-           
+        var _next_stop = "stop=\"" + feature.properties.nextLocID + "\" "; 
+
         var btn = "<button "+  _type + _route + _class +
-            _style + _coord + ">Track</button>";
-        var popup = feature.properties.signMessage + "<br>" + btn; 
+            _next_stop + _style + _coord + ">Track</button>";
+        var popup = L.popup()
+            .setContent(feature.properties.signMessage + "<br>" + btn); 
         return popup;
     }
 
@@ -68,7 +90,8 @@ function Map(params) {
           "properties": {
               "signMessage":data.signMessageLong,
               "routeNumber":data.routeNumber,
-              "loadPercentage":data.loadPercentage
+              "loadPercentage":data.loadPercentage,
+              "nextLocID":data.nextLocID
           }
         };
         return vehicle;

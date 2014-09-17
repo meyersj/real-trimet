@@ -106,12 +106,14 @@
       var BASE_URL = "http://developer.trimet.org/ws";
       var WS_VEH = "v2/vehicles";
       var WS_ROUTES = "V1/routeConfig";
+      var WS_ARRIVALS = "v2/arrivals";
 
       var params = {
           APPID:APPID,
           BASE_URL:BASE_URL,
           WS_VEH:WS_VEH,
           WS_ROUTES:WS_ROUTES,
+          WS_ARRIVALS:WS_ARRIVALS,
           map_div:"map"
       };
 
@@ -182,12 +184,10 @@
           //set on click handler to track link inside vehicle popup
           //that will zoom to vehicle
           $('#map').on('click', ".track-vehicle", function() {
-              var trackBtn = $(this);
-              var coord = JSON.parse(trackBtn.attr("coord"));
+              var coord = JSON.parse($(this).attr("coord"));
               map.zoomToVehicle(coord);
           });
-
-    });
+      });
 
     </script>
   
