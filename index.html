@@ -120,6 +120,7 @@
       var map = new Map(params);
       map.initmap();
       var routes = {};
+      var tracking = null;
 
       //add routes trimet is publishing data for to dropdown filter
       //and add on click listener to update vehicles
@@ -161,8 +162,9 @@
               }
               map.setRoute(rte);
               map.updateVehicles();
+              clearInterval(tracking);
           });
-
+          
           $('#filter_dir a').on('click', function() {
               var dir = null;
               var text = this.text;
@@ -179,14 +181,25 @@
               }
               map.setDirection(dir);
               map.updateVehicles();
+              clearInterval(tracking);
           });
 
           //set on click handler to track link inside vehicle popup
           //that will zoom to vehicle
           $('#map').on('click', ".track-vehicle", function() {
+              console.log(this);
               var coord = JSON.parse($(this).attr("coord"));
+              var id = $(this).attr("veh-id");
               map.zoomToVehicle(coord);
+              
+              map.trackVehicle(id, false);
+              tracking = setInterval(function() {
+                  map.trackVehicle(id, true);
+              }, 5000);
+              
           });
+
+
       });
 
     </script>

@@ -4,15 +4,17 @@ function Map(params) {
     
     this.APPID = params.APPID;
     this.BASE_URL = params.BASE_URL;
-    this.WS_VEH = params.WS_VEH;
-    this.WS_ROUTES = params.WS_ROUTES;
-    this.WS_ARRIVALS = params.WS_ARRIVALS;
+    this.WS_VEH = this.BASE_URL + "/" + params.WS_VEH;
+    this.WS_ROUTES = this.BASE_URL + "/" + params.WS_ROUTES;
+    this.WS_ARRIVALS = this.BASE_URL + "/" + params.WS_ARRIVALS;
 
     this.mapDiv = params.map_div;
     this.map = null;
     this.vehicles = null;
     this.rte = null;
     this.dir = null; 
+    this.vehicleMarkers = {};
+
 
     this.initmap = function() {
         // set up the map
@@ -42,9 +44,8 @@ function Map(params) {
             //until stop name is recieved from AJAX call
             e.popup.setContent(btnText);
 
-            var url = THIS.BASE_URL + "/" + THIS.WS_ARRIVALS;
             var params = {appID:THIS.APPID, json:true, locIDs:btn.attr("stop")};
-            $.getJSON(url, params ,function(data) {
+            $.getJSON(THIS.WS_ARRIVALS, params ,function(data) {
                 //TODO handle if more than location.length > 0 ???
                 var desc = data.resultSet.location[0].desc;
                 e.popup.setContent(desc + "<br>" + btnText);
@@ -58,6 +59,7 @@ function Map(params) {
 
     function clearVehicles() {
         THIS.vehicles.clearLayers();
+        THIS.vehicleMarkers = {};
     } 
     
     function buildPopup(feature, layer) {
@@ -69,8 +71,9 @@ function Map(params) {
         var _style = "style=\"width:100%\" ";
         var _class = "class=\"track-vehicle btn btn-default btn-xs\" ";
         var _next_stop = "stop=\"" + feature.properties.nextLocID + "\" "; 
+        var _vehID = "veh-id=\"" + feature.properties.vehicleID + "\" ";
 
-        var btn = "<button "+  _type + _route + _class +
+        var btn = "<button "+  _type + _route + _class + _vehID + 
             _next_stop + _style + _coord + ">Track</button>";
         var popup = L.popup()
             .setContent(feature.properties.signMessage + "<br>" + btn); 
@@ -91,22 +94,30 @@ function Map(params) {
               "signMessage":data.signMessageLong,
               "routeNumber":data.routeNumber,
               "loadPercentage":data.loadPercentage,
-              "nextLocID":data.nextLocID
+              "nextLocID":data.nextLocID,
+              "vehicleID":data.vehicleID
           }
         };
         return vehicle;
+    }
+
+
+    function buildGeoJsonOptions() {
+        var options = {
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup(buildPopup(feature, layer));
+            }
+        }
+        return options;
     }
 
     //create leaflet object and add to vehicles geoJSON layer
     function addVehicle(data) {
         if (THIS.dir == null || THIS.dir == data.direction) {
             var geoJson = new L.geoJson(
-                buildVehicleGeoJSON(data), {
-                    onEachFeature: function (feature, layer) {
-                        layer.bindPopup(buildPopup(feature, layer));
-                    }
-                }
+                buildVehicleGeoJSON(data), buildGeoJsonOptions()
             );
+            THIS.vehicleMarkers[data.vehicleID] = geoJson;           
             THIS.vehicles.addLayer(geoJson);
         }
     }
@@ -129,14 +140,13 @@ function Map(params) {
     }
 
     this.updateVehicles = function() {
-          var url = this.BASE_URL + "/" + this.WS_VEH;
           var params = {appID:this.APPID};
 
           if(this.rte !== null) {
               params["routes"] = this.rte;
           }
 
-          $.getJSON(url, params ,function(data) {
+          $.getJSON(THIS.WS_VEH, params ,function(data) {
               //TODO handle if error was returned from api 
               clearVehicles();
               
@@ -151,6 +161,36 @@ function Map(params) {
               }
           });
       }
+
+      this.trackVehicle = function(vehicleID, tracking) {
+          var params = {appID:this.APPID, ids:vehicleID};
+          var layer = THIS.vehicleMarkers[vehicleID];
+
+          //if not already tracking clear all markers and
+          //re-add only the one we want to track
+          if(!tracking) {
+              clearVehicles();
+              THIS.vehicles.addLayer(layer);
+              THIS.vehicleMarkers[vehicleID] = layer;
+          }
+
+          $.getJSON(THIS.WS_VEH, params ,function(data) {
+              var lat = data.resultSet.vehicle[0].latitude;
+              var lon = data.resultSet.vehicle[0].longitude;
+              var geoJson = layer.toGeoJSON();
+              var coord = geoJson.features[0].geometry.coordinates; 
+
+              if(coord[0] != lon || coord[1] != lat) {
+                  geoJson.features[0].geometry.coordinates = [lon, lat];
+                  var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
+                  clearVehicles();
+                  THIS.vehicles.addLayer(newGeoJson);
+                  THIS.map.panTo([lat, lon]);
+                  THIS.vehicleMarkers[vehicleID] = newGeoJson;           
+              }
+          });
+      }
+
 
 }
 
