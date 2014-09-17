@@ -1,3 +1,34 @@
+var filterControls =  
+    '<div>' +
+        '<div class="btn-group" role="form" style="margin-right:5px">' +
+            '<button id="line_btn" type="button"' +
+                'class="btn btn-default dropdown-toggle" data-toggle="dropdown">' +
+            'Route    <span class="caret"></span>' +
+            '</button>' +
+            '<ul id="filter_line" class="dropdown-menu pull-right scrollable-menu"' +
+                'role="menu">' +
+                '<li role="presentation" class="dropdown-header">Route</li>' +
+                '<li role="presentation"><a href="#">All</a></li>' +
+                '<li role="presentation" class="divider"></li>' +
+            '</ul>' +
+        '</div>' +
+        '<div class="btn-group">' + 
+            '<button id="dir_btn" type="button"' +
+                'class="btn btn-default dropdown-toggle" data-toggle="dropdown">' +
+                'Direction    <span class="caret"></span>' +
+            '</button>' +
+            '<ul id="filter_dir" class="dropdown-menu pull-right scrollable-menu"' + 
+                'role="menu">' +
+                '<li role="presentation" class="dropdown-header">Direction</li>' +
+                '<li role="presentation"><a href="#">All</a></li>' +
+                '<li role="presentation" class="divider"></li>' +
+                '<li><a href="#">Inbound</a></li>' +
+                '<li><a href="#">Outbound</a></li>' +
+            '</ul>' +
+        '</div>' +
+    '</div>';
+
+
 function Map(params) {
 
     var THIS = this;
@@ -55,6 +86,24 @@ function Map(params) {
         
         //create empty layer for vehicle locations
         this.vehicles = new L.featureGroup().addTo(this.map);
+
+
+        var MyControl = L.Control.extend({
+            options: {
+                position: 'topright'
+            },
+
+            onAdd: function (map) {
+                // create the control container with a particular class name
+                var container = L.DomUtil.create('div', 'dropdown-control');
+                container.innerHTML = filterControls;
+                L.DomEvent.on(container, 'mousedown', L.DomEvent.stopPropagation);
+                return container;
+            }
+        });
+
+        this.map.addControl(new MyControl());
+
     }
 
     function clearVehicles() {
