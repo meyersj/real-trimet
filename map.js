@@ -35,7 +35,7 @@ function Map(params) {
 
         this.map.on('popupopen', function(e) {
             THIS.map.panTo(e.popup.getLatLng());
-            var btn = $($.parseHTML(e.popup.getContent()[2]));
+            var btn = $($.parseHTML(e.popup.getContent())[2]);
             var btnText = btn.context.outerHTML;
             
             //modify popup to only display button
