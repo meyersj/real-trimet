@@ -2,7 +2,7 @@ var filterControls =
     '<div>' +
         '<div class="btn-group" role="form" style="margin-bottom:5px">' +
             '<button id="line-btn" type="button"' +
-                'class="btn btn-default dropdown-toggle" data-toggle="dropdown">' +
+                'class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">' +
             'Route    <span class="caret"></span>' +
             '</button>' +
             '<ul id="filter-line" class="dropdown-menu pull-right scrollable-menu"' +
@@ -15,7 +15,7 @@ var filterControls =
         '<br>' + 
         '<div class="btn-group" id="dir-group">' + 
             '<button id="dir-btn" type="button"' +
-                'class="btn btn-default dropdown-toggle" data-toggle="dropdown">' +
+                'class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">' +
                 'Direction    <span class="caret"></span>' +
             '</button>' +
             '<ul id="filter-dir" class="dropdown-menu pull-right scrollable-menu"' + 
