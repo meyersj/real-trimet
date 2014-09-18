@@ -29,6 +29,16 @@ var filterControls =
         '</div>' +
     '</div>';
 
+var markerOptions = {
+     radius: 8,
+     color: "#000",
+     weight: 1,
+     opacity: 1,
+     fillOpacity: 0.8,
+     fillColor: '#D69020'
+};
+
+
 
 function Map(params) {
 
@@ -87,24 +97,6 @@ function Map(params) {
         
         //create empty layer for vehicle locations
         this.vehicles = new L.featureGroup().addTo(this.map);
-
-
-        var MyControl = L.Control.extend({
-            options: {
-                position: 'topright'
-            },
-
-            onAdd: function (map) {
-                // create the control container with a particular class name
-                var container = L.DomUtil.create('div', 'dropdown-control');
-                container.innerHTML = filterControls;
-                L.DomEvent.on(container, 'mousedown', L.DomEvent.stopPropagation);
-                return container;
-            }
-        });
-
-        //this.map.addControl(new MyControl());
-
     }
 
     function clearVehicles() {
@@ -154,6 +146,10 @@ function Map(params) {
 
     function buildGeoJsonOptions() {
         var options = {
+            pointToLayer: function(feature, latlng) {
+                return L.circleMarker(latlng, markerOptions);
+            },
+            
             onEachFeature: function (feature, layer) {
                 layer.bindPopup(buildPopup(feature, layer));
             }
