@@ -1,29 +1,30 @@
 var filterControls =  
     '<div>' +
-        '<div class="btn-group" role="form" style="margin-right:5px">' +
-            '<button id="line_btn" type="button"' +
+        '<div class="btn-group" role="form" style="margin-bottom:5px">' +
+            '<button id="line-btn" type="button"' +
                 'class="btn btn-default dropdown-toggle" data-toggle="dropdown">' +
             'Route    <span class="caret"></span>' +
             '</button>' +
-            '<ul id="filter_line" class="dropdown-menu pull-right scrollable-menu"' +
+            '<ul id="filter-line" class="dropdown-menu pull-right scrollable-menu"' +
                 'role="menu">' +
                 '<li role="presentation" class="dropdown-header">Route</li>' +
                 '<li role="presentation"><a href="#">All</a></li>' +
                 '<li role="presentation" class="divider"></li>' +
             '</ul>' +
         '</div>' +
-        '<div class="btn-group">' + 
-            '<button id="dir_btn" type="button"' +
+        '<br>' + 
+        '<div class="btn-group" id="dir-group">' + 
+            '<button id="dir-btn" type="button"' +
                 'class="btn btn-default dropdown-toggle" data-toggle="dropdown">' +
                 'Direction    <span class="caret"></span>' +
             '</button>' +
-            '<ul id="filter_dir" class="dropdown-menu pull-right scrollable-menu"' + 
+            '<ul id="filter-dir" class="dropdown-menu pull-right scrollable-menu"' + 
                 'role="menu">' +
                 '<li role="presentation" class="dropdown-header">Direction</li>' +
                 '<li role="presentation"><a href="#">All</a></li>' +
                 '<li role="presentation" class="divider"></li>' +
-                '<li><a href="#">Inbound</a></li>' +
-                '<li><a href="#">Outbound</a></li>' +
+                '<li class="dir-option"><a href="#">Inbound</a></li>' +
+                '<li class="dir-option"><a href="#">Outbound</a></li>' +
             '</ul>' +
         '</div>' +
     '</div>';
