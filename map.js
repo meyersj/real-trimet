@@ -103,7 +103,7 @@ function Map(params) {
             }
         });
 
-        this.map.addControl(new MyControl());
+        //this.map.addControl(new MyControl());
 
     }
 

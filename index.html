@@ -50,7 +50,71 @@
         <div class="col-xs-12 col-sm-12 col-md-12 main">
         <!-- TODO replace these breaks with css on body -->
           <br><br><br><br>
+
+          <div class="btn-group" role="form">
+            <button id="line-btn" type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+              Route <span class="caret"></span>
+            </button>
+            <ul id="filter-line" class="dropdown-menu scrollable-menu" role="menu">
+              <li role="presentation" class="dropdown-header">Route</li>
+              <li role="presentation"><a href="#">All</a></li>
+              <li role="presentation" class="divider"></li>
+            </ul>
+          </div>
+          <div class="btn-group" id="dir-group">
+            <button id="dir-btn" type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+              Direction <span class="caret"></span>
+            </button>
+            <ul id="filter-dir" class="dropdown-menu scrollable-menu" role="menu">
+              <li role="presentation" class="dropdown-header">Direction</li>
+              <li role="presentation"><a href="#">All</a></li>
+              <li role="presentation" class="divider"></li>
+              <li class="dir-option"><a href="#">Inbound</a></li>
+              <li class="dir-option"><a href="#">Outbound</a></li>
+            </ul>
+          </div>
           
+         
+         <!-- dropdown filters -->
+           <!--table>
+             <tr>
+               <td style="padding-right:1em">
+                 <strong>Route:</strong>
+            </td>
+            <td>
+            <div class="btn-group" role="form">
+            <button id="line_btn" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+            All <span class="caret"></span>
+            </button>
+            <ul id="filter_line" class="dropdown-menu scrollable-menu" role="menu">
+            <li role="presentation" class="dropdown-header">Route</li>
+            <li role="presentation"><a href="#">All</a></li>
+            <li role="presentation" class="divider"></li>
+            </ul>
+            </div>
+            </td>
+            </tr>
+            <tr>
+            <td style="padding-right:1em">
+            <strong>Direction:</strong>
+            </td>
+            <td>
+            <div class="btn-group">
+            <button id="dir_btn" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+            All <span class="caret"></span>
+            </button>
+            <ul id="filter_dir" class="dropdown-menu scrollable-menu" role="menu">
+            <li role="presentation" class="dropdown-header">Direction</li>
+            <li role="presentation"><a href="#">All</a></li>
+            <li role="presentation" class="divider"></li>
+            <li><a href="#">Inbound</a></li>
+            <li><a href="#">Outbound</a></li>
+            </ul>
+            </div>
+            </td>
+            </tr>
+            </table-->
+
           <!-- leaflet map -->
           <div id="map" style="width:100%; height:70vh"></div>
         </div>
