@@ -69,8 +69,8 @@ function Map(params) {
         var osm = new L.TileLayer(osmUrl, {
             minZoom: 1,
             maxZoom: 20,
-            attribution: osmAttrib,
-            id: 'examples.map-i86knfo3'
+            attribution: osmAttrib
+            //id: 'examples.map-i86knfo3'
         });
         
         // start the map in South-East England
