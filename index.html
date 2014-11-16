@@ -10,7 +10,10 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>    
-    <script src="map.js"></script>
+    <script src="js/proj4.js"></script>
+    <script src="js/proj_def.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/interpolate.js"></script>
 
     <style>
       .scrollable-menu {
@@ -50,7 +53,7 @@
         <div class="col-xs-12 col-sm-12 col-md-12 main">
         <!-- TODO replace these breaks with css on body -->
           <br><br><br><br>
-         
+          
           <!-- dropdown filters -->
           <div style="margin-bottom:3px">
             <div class="btn-group" role="form">
@@ -81,10 +84,9 @@
           <div id="map" style="width:100%; height:70vh"></div>
         </div>
       </div>
-    </div>
-
-    <script>
-
+    
+      <script>
+    
       //api constant variables
       var APPID = "59E23608FABA109B7153953F2";
       var BASE_URL = "http://developer.trimet.org/ws";
@@ -101,6 +103,18 @@
           WS_ARRIVALS:WS_ARRIVALS,
           map_div:"map"
       };
+
+      var coords = {"x":-122.241, "y":45.125};
+
+      var interpolate = new Interpolate();
+      //var new_coords = interpolate.project(coords);
+      
+      var data ={
+          "current":{"x":0,"y":0},
+          "new":{"x":10, "y":10}
+      };
+
+      var dist = interpolate.interpolate(2, 5, data);
 
       var map = new Map(params);
       map.initmap();
@@ -219,13 +233,27 @@
           //that will zoom to vehicle
           $('#map').on('click', ".track-vehicle", function() {
               var coord = JSON.parse($(this).attr("coord"));
+              console.log(coord);
+
+              var proj_coords = {"x":coord["lon"], "y":coord["lat"]};
+              console.log(proj_coords);
+              
+              
+              proj_coords = proj4(PROJ[4326], PROJ[2913], proj_coords);
+              
+              console.log(proj_coords);
+                
               var id = $(this).attr("veh-id");
               map.zoomToVehicle(coord);
               
-              map.trackVehicle(id, false);
+              map.trackVehicle(id);
               tracking = setInterval(function() {
-                  map.trackVehicle(id, true);
-              }, 5000);
+                  //var prev_coords = [];
+                  //prev_coords.push(coord);
+                  //console.log(prev_coords);
+                  //'{"lat":45.4973852,"lon":-122.5892599}'
+                  map.trackVehicle(id);
+              }, 10000);
               
           });
       });

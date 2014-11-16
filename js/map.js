@@ -56,21 +56,23 @@ function Map(params) {
     this.rte = null;
     this.dir = null; 
     this.vehicleMarkers = {};
-
+    this.tracking = null;
 
     this.initmap = function() {
         // set up the map
         this.map = new L.Map(this.mapDiv);
         
         // create the tile layer with correct attribution
-        var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-        //var osmUrl = 'https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png';
+        //var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        var osmUrl = 'https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png';
+        var id = "meyersj.map-6u6rh54c";
+        
         var osmAttrib = 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
         var osm = new L.TileLayer(osmUrl, {
             minZoom: 1,
             maxZoom: 20,
             attribution: osmAttrib,
-            id: 'examples.map-i86knfo3'
+            id: id
         });
         
         // start the map in South-East England
@@ -208,19 +210,27 @@ function Map(params) {
           });
       }
 
-      this.trackVehicle = function(vehicleID, tracking) {
+      this.trackVehicle = function(vehicleID) {
+          //vehicle is already being tracked
+          if(THIS.tracking != null && THIS.tracking == vehicleID) {
+              return false;
+          }
+
+          //build params 
           var params = {appID:this.APPID, ids:vehicleID};
           var layer = THIS.vehicleMarkers[vehicleID];
-
+          
           //if not already tracking clear all markers and
           //re-add only the one we want to track
-          if(!tracking) {
+          if(THIS.tracking) {
               clearVehicles();
+              //add vehicle to map
               THIS.vehicles.addLayer(layer);
               THIS.vehicleMarkers[vehicleID] = layer;
           }
 
           $.getJSON(THIS.WS_VEH, params ,function(data) {
+              console.log(data);
               var lat = data.resultSet.vehicle[0].latitude;
               var lon = data.resultSet.vehicle[0].longitude;
               var geoJson = layer.toGeoJSON();
@@ -231,7 +241,7 @@ function Map(params) {
                   var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
                   clearVehicles();
                   THIS.vehicles.addLayer(newGeoJson);
-                  THIS.map.panTo([lat, lon]);
+                  //THIS.map.panTo([lat, lon]);
                   THIS.vehicleMarkers[vehicleID] = newGeoJson;           
               }
           });
