@@ -38,6 +38,23 @@ function Interpolate() {
         return new_coords;
     }
    
+
+    function stop_lookup(stop_id) {
+
+
+
+
+    }
+    THIS.interpolate = function(current_coordinates, next_stop_id) {
+        var cur_x = current_coordinates["x"];
+        var cur_y= current_coordinates["y"];
+
+        $.getJSON(THIS.URL + "/stop_lookup", {"stop_id":next_stop_id},function(data) {
+            var resp = data.response;
+            console.log(resp);  
+        });
+    }
+    
     THIS.interpolate = function(speed, interval, data) {
         var cur_x = data["current"]["x"];
         var cur_y = data["current"]["y"];
