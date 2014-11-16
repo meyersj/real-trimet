@@ -1,7 +1,6 @@
 *.*~
 merge_ghpages.sh
 *.*swp
-server/
 data/
 sql/
 setup.sh
