@@ -5,3 +5,4 @@ data/
 sql/
 setup.sh
 config.py
+ssh.sh
