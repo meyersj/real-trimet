@@ -30,7 +30,9 @@ def stop_lookup():
 	    LIMIT 1;""", {"stop_id":stop_id})
 
         data = results.fetchone()
-        if data:
+        
+	#return coordinates in Oregon State Plane North - EPSG:2913
+	if data:
 	    response['stop_name'] = data['stop_name']
             response['stop_id'] = data['stop_id']
             response['coord'] = {}
