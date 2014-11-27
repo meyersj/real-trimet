@@ -57,6 +57,7 @@ function Map(params) {
     this.dir = null; 
     this.vehicleMarkers = {};
     this.tracking = null;
+    this.currentVehicle = null;
 
     this.initmap = function() {
         // set up the map
@@ -188,65 +189,127 @@ function Map(params) {
     }
 
     this.updateVehicles = function() {
-          var params = {appID:this.APPID};
+        var params = {appID:this.APPID};
 
-          if(this.rte !== null) {
-              params["routes"] = this.rte;
-          }
+        if(this.rte !== null) {
+          params["routes"] = this.rte;
+        }
 
-          $.getJSON(THIS.WS_VEH, params ,function(data) {
-              //TODO handle if error was returned from api 
-              clearVehicles();
-              
-              if(data.resultSet.hasOwnProperty('vehicle')) {
-                  for(var i = 0; i < data.resultSet.vehicle.length; i++) {
-                      addVehicle(data.resultSet.vehicle[i]);
-                  }
-                  zoomToVehicles();
-              }
-              else {
-                  alert("No vehicle locations available for that route");
-              }
-          });
-      }
-
-      this.trackVehicle = function(vehicleID) {
-          //vehicle is already being tracked
-          if(THIS.tracking != null && THIS.tracking == vehicleID) {
-              return false;
-          }
-
-          //build params 
-          var params = {appID:this.APPID, ids:vehicleID};
-          var layer = THIS.vehicleMarkers[vehicleID];
+        $.getJSON(THIS.WS_VEH, params ,function(data) {
+          //TODO handle if error was returned from api 
+          clearVehicles();
           
-          //if not already tracking clear all markers and
-          //re-add only the one we want to track
-          if(THIS.tracking) {
-              clearVehicles();
-              //add vehicle to map
-              THIS.vehicles.addLayer(layer);
-              THIS.vehicleMarkers[vehicleID] = layer;
-          }
-
-          $.getJSON(THIS.WS_VEH, params ,function(data) {
-              console.log(data);
-              var lat = data.resultSet.vehicle[0].latitude;
-              var lon = data.resultSet.vehicle[0].longitude;
-              var geoJson = layer.toGeoJSON();
-              var coord = geoJson.features[0].geometry.coordinates; 
-
-              if(coord[0] != lon || coord[1] != lat) {
-                  geoJson.features[0].geometry.coordinates = [lon, lat];
-                  var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
-                  clearVehicles();
-                  THIS.vehicles.addLayer(newGeoJson);
-                  //THIS.map.panTo([lat, lon]);
-                  THIS.vehicleMarkers[vehicleID] = newGeoJson;           
+          if(data.resultSet.hasOwnProperty('vehicle')) {
+              for(var i = 0; i < data.resultSet.vehicle.length; i++) {
+                  addVehicle(data.resultSet.vehicle[i]);
               }
-          });
-      }
+              zoomToVehicles();
+          }
+          else {
+              alert("No vehicle locations available for that route");
+          }
+        });
+    }
 
+    var onInterpolate = function() {
+        var MAP_THIS = this.MAP_THIS;
+        //console.log(this.cur_x);
+        //console.log(this.cur_y);
+        var latlng = proj4(PROJ[2913], PROJ[4326],
+            {"x":this.cur_x, "y":this.cur_y}); 
+        
+        var geoJson = MAP_THIS.vehicleMarkers[this.id].toGeoJSON();
+        geoJson.features[0].geometry.coordinates = [
+            latlng["x"], latlng["y"]
+        ];
+        clearVehicles();
+        var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
+        MAP_THIS.vehicles.addLayer(newGeoJson);
+        MAP_THIS.vehicleMarkers[this.id] = newGeoJson;
+    }
+    
+    function VehicleStatus(vehicleID, map, url, appID) {
+        var THIS = this;
+        var MAP_THIS = map;
+        THIS.id = vehicleID;
+        THIS.appID = appID;
+        THIS.url = url;
+        THIS.lat = null;
+        THIS.lon = null;
+        THIS.next_stop_id = null;
+        
+        THIS.interpolate = new Interpolate(vehicleID, MAP_THIS, onInterpolate);
+
+        function build_params(id) {
+            return {appID:THIS.appID, ids:THIS.id};
+        } 
+        
+        THIS.get_coord = function() {
+            return {"x":THIS.lon, "y":THIS.lat}; 
+        }
+
+        THIS.get_latlon = function() {
+            return {"lon":THIS.lon, "lat":THIS.lat}; 
+        }
+
+        function same(new_lat, new_lon) {
+            if(THIS.lat == new_lat && THIS.lon == new_lon)
+                return true;
+            return false;
+        }
+
+        THIS.update = function() {
+            var params = build_params();
+            
+            $.getJSON(THIS.url, params ,function(data) {
+                console.log(data);
+                //var layer = MAP_THIS.vehicleMarkers[id];
+                var new_lat = data.resultSet.vehicle[0].latitude;
+                var new_lon = data.resultSet.vehicle[0].longitude;
+                var next_stop_id = data.resultSet.vehicle[0].nextLocID;
+                console.log(next_stop_id);
+ 
+                //update map and reset interpolation?
+                if(!same(new_lat, new_lon)) {
+                    //console.log("new coordinates");
+                    THIS.lat = new_lat;
+                    THIS.lon = new_lon; 
+                    
+                    THIS.interpolate.start(next_stop_id, THIS.get_coord());
+
+                    //update vehicle on map
+                    var geoJson = MAP_THIS.vehicleMarkers[THIS.id].toGeoJSON();
+                    geoJson.features[0].geometry.coordinates = [THIS.lon, THIS.lat];
+                    var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
+                    clearVehicles();
+                    MAP_THIS.vehicles.addLayer(newGeoJson);
+                    MAP_THIS.map.panTo([THIS.lat, THIS.lon]);
+                    MAP_THIS.vehicleMarkers[THIS.id] = newGeoJson;
+                }
+                //do nothing
+                //we should be interpolating
+                else {
+                    //console.log("same coordinates");
+                }
+                 
+            });
+        }
+    }
+
+
+    THIS.trackVehicle = function(vehicleID) {
+        //no vehicle has been tracked yet
+        if(THIS.currentVehicle == null || THIS.currentVehicle.id != vehicleID) {
+            THIS.currentVehicle = new VehicleStatus(
+                vehicleID, THIS, THIS.WS_VEH, THIS.APPID);
+            THIS.tracking = vehicleID;
+        }
+        
+        //same vehicle keep check for updates
+        var tracking = setInterval(function() {
+            THIS.currentVehicle.update();
+        }, 5000);
+    }
 
 }
 

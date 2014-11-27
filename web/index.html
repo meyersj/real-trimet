@@ -104,18 +104,6 @@
           map_div:"map"
       };
 
-      var coords = {"x":-122.241, "y":45.125};
-
-      var interpolate = new Interpolate();
-      //var new_coords = interpolate.project(coords);
-      
-      var data ={
-          "current":{"x":0,"y":0},
-          "new":{"x":10, "y":10}
-      };
-
-      var dist = interpolate.interpolate(2, 5, data);
-
       var map = new Map(params);
       map.initmap();
       var selectedRoute = null;
@@ -233,27 +221,23 @@
           //that will zoom to vehicle
           $('#map').on('click', ".track-vehicle", function() {
               var coord = JSON.parse($(this).attr("coord"));
-              console.log(coord);
-
-              var proj_coords = {"x":coord["lon"], "y":coord["lat"]};
-              console.log(proj_coords);
+              var coordinates = {"x":coord["lon"], "y":coord["lat"]};
+              console.log(coordinates);
               
+              //proj_coords = proj4(PROJ[4326], PROJ[2913], proj_coords);
               
-              proj_coords = proj4(PROJ[4326], PROJ[2913], proj_coords);
-              
-              console.log(proj_coords);
-                
               var id = $(this).attr("veh-id");
               map.zoomToVehicle(coord);
               
               map.trackVehicle(id);
-              tracking = setInterval(function() {
+              
+              //tracking = setInterval(function() {
                   //var prev_coords = [];
                   //prev_coords.push(coord);
                   //console.log(prev_coords);
                   //'{"lat":45.4973852,"lon":-122.5892599}'
-                  map.trackVehicle(id);
-              }, 10000);
+                  //map.trackVehicle(id);
+              //}, 5000);
               
           });
       });
