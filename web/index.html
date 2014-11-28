@@ -221,7 +221,7 @@
           //that will zoom to vehicle
           $('#map').on('click', ".track-vehicle", function() {
               var coord = JSON.parse($(this).attr("coord"));
-              var coordinates = {"x":coord["lon"], "y":coord["lat"]};
+              var coordinates = {x:coord["lon"], y:coord["lat"]};
               console.log(coordinates);
               
               //proj_coords = proj4(PROJ[4326], PROJ[2913], proj_coords);

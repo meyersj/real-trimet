@@ -39,7 +39,6 @@ var markerOptions = {
 };
 
 
-
 function Map(params) {
 
     var THIS = this;
@@ -95,7 +94,6 @@ function Map(params) {
                 var desc = data.resultSet.location[0].desc;
                 e.popup.setContent(desc + "<br>" + btnText);
             });
-
         });
         
         //create empty layer for vehicle locations
@@ -211,6 +209,8 @@ function Map(params) {
         });
     }
 
+
+    /*
     var onInterpolate = function() {
         var MAP_THIS = this.MAP_THIS;
         //console.log(this.cur_x);
@@ -227,18 +227,16 @@ function Map(params) {
         MAP_THIS.vehicles.addLayer(newGeoJson);
         MAP_THIS.vehicleMarkers[this.id] = newGeoJson;
     }
+    */
     
-    function VehicleStatus(vehicleID, map, url, appID) {
+    function VehicleStatus(map, url, appID) {
         var THIS = this;
         var MAP_THIS = map;
-        THIS.id = vehicleID;
+        THIS.id = null;
         THIS.appID = appID;
         THIS.url = url;
-        THIS.lat = null;
-        THIS.lon = null;
-        THIS.next_stop_id = null;
         
-        THIS.interpolate = new Interpolate(vehicleID, MAP_THIS, onInterpolate);
+        THIS.interpolate = new Interpolate(MAP_THIS, buildGeoJsonOptions);
 
         function build_params(id) {
             return {appID:THIS.appID, ids:THIS.id};
@@ -258,26 +256,71 @@ function Map(params) {
             return false;
         }
 
+        //make call and get updated vehicle location
+        //and next stop
+        //
+        //start interpolation
+        THIS.start = function(vehicleID) {
+            THIS.id = vehicleID;
+
+            var params = build_params();
+            
+            $.getJSON(THIS.url, params ,function(data) {
+                console.log(data);
+                var layer = MAP_THIS.vehicleMarkers[THIS.id];
+                var lat = data.resultSet.vehicle[0].latitude;
+                var lon = data.resultSet.vehicle[0].longitude;
+                var next_stop = data.resultSet.vehicle[0].nextLocID;
+                console.log(next_stop);
+                
+                var geoJson = MAP_THIS.vehicleMarkers[THIS.id].toGeoJSON();
+                geoJson.features[0].geometry.coordinates = [lon, lat];
+                
+                console.log(geoJson);
+                var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
+                clearVehicles();
+                MAP_THIS.vehicles.addLayer(newGeoJson);
+                MAP_THIS.map.panTo([lat, lon]);
+                MAP_THIS.vehicleMarkers[THIS.id] = newGeoJson;
+
+                THIS.interpolate.reset();
+                THIS.interpolate.start(lat, lon, next_stop, THIS.id);
+            
+                //clearInterval(THIS.tracking);
+                //THIS.tracking = setInterval(function() {
+                //    THIS.update();
+                //}, 5000);
+            });
+        }
+
+        THIS.stop = function() {
+            clearInterval(THIS.tracking);
+        }
+
         THIS.update = function() {
             var params = build_params();
             
             $.getJSON(THIS.url, params ,function(data) {
                 console.log(data);
-                //var layer = MAP_THIS.vehicleMarkers[id];
-                var new_lat = data.resultSet.vehicle[0].latitude;
-                var new_lon = data.resultSet.vehicle[0].longitude;
-                var next_stop_id = data.resultSet.vehicle[0].nextLocID;
-                console.log(next_stop_id);
+                var layer = MAP_THIS.vehicleMarkers[THIS.id];
+                
+                var lat = data.resultSet.vehicle[0].latitude;
+                var lon = data.resultSet.vehicle[0].longitude;
+                var next_stop = data.resultSet.vehicle[0].nextLocID;
+                console.log(next_stop);
  
                 //update map and reset interpolation?
-                if(!same(new_lat, new_lon)) {
-                    //console.log("new coordinates");
-                    THIS.lat = new_lat;
-                    THIS.lon = new_lon; 
+                if(!same(lat, lon)) {
+                    console.log("new coordinates");
+                    THIS.lat = lat;
+                    THIS.lon = lon; 
                     
-                    THIS.interpolate.start(next_stop_id, THIS.get_coord());
+                    //THIS.interpolate.reset();
+                    //THIS.interpolate.start(lat, lon, next_stop);
 
                     //update vehicle on map
+                    
+                    /*
                     var geoJson = MAP_THIS.vehicleMarkers[THIS.id].toGeoJSON();
                     geoJson.features[0].geometry.coordinates = [THIS.lon, THIS.lat];
                     var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
@@ -285,13 +328,11 @@ function Map(params) {
                     MAP_THIS.vehicles.addLayer(newGeoJson);
                     MAP_THIS.map.panTo([THIS.lat, THIS.lon]);
                     MAP_THIS.vehicleMarkers[THIS.id] = newGeoJson;
+                    
+                    THIS.interpolate.reset();
+                    THIS.interpolate.start(lat, lon, next_stop);
+                    */
                 }
-                //do nothing
-                //we should be interpolating
-                else {
-                    //console.log("same coordinates");
-                }
-                 
             });
         }
     }
@@ -299,16 +340,10 @@ function Map(params) {
 
     THIS.trackVehicle = function(vehicleID) {
         //no vehicle has been tracked yet
-        if(THIS.currentVehicle == null || THIS.currentVehicle.id != vehicleID) {
-            THIS.currentVehicle = new VehicleStatus(
-                vehicleID, THIS, THIS.WS_VEH, THIS.APPID);
-            THIS.tracking = vehicleID;
+        if(THIS.currentVehicle == null) {
+            THIS.currentVehicle = new VehicleStatus(THIS, THIS.WS_VEH, THIS.APPID);
         }
-        
-        //same vehicle keep check for updates
-        var tracking = setInterval(function() {
-            THIS.currentVehicle.update();
-        }, 5000);
+        THIS.currentVehicle.start(vehicleID);
     }
 
 }
