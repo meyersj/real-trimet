@@ -151,6 +151,7 @@
           }
 
           function filterDirectionListener() {
+              map.filterChange();
               $('#filter-dir a').on('click', function() {
                   var dir = null;
                   var text = this.text;
@@ -176,6 +177,8 @@
          filterDirectionListener();
 
           $('#filter-line a').on('click', function() {
+              map.filterChange();
+
               var rte = null;
               var text = this.text;
 

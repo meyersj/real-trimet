@@ -38,6 +38,85 @@ var markerOptions = {
      fillColor: '#D69020'
 };
 
+function MapUtils(map) {
+    var THIS = this;
+    THIS.MAP = map;
+    
+    
+    /* Clear all markers from map */
+    THIS.clearVehicles = function() {
+        THIS.MAP.vehicles.clearLayers();
+        THIS.MAP.vehicleMarkers = {};
+    } 
+
+    /* Leaflet options for each vehicle location feature
+     *  -customize marker instead of using default marker
+     *  -build a popup and bind it to vehicle marker
+     */  
+    THIS.geoJsonOptionsFactory = function() {
+        var options = {
+            pointToLayer: function(feature, latlng) {
+                return L.circleMarker(latlng, markerOptions);
+            },
+            
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup(THIS.popupFactory(feature, layer));
+            }
+        }
+        return options;
+    }
+
+    /* function to construct leaflet popups using html string
+     * with a button to track the vehicle and additional tag attributes
+     *  -coordinates
+     *  -route number
+     *  -next stop id
+     *  -vehicle id
+     */
+    THIS.popupFactory = function(feature, layer) {
+        // html tag elements
+        var _coord = "coord='" + "{\"lat\":" + 
+            layer._latlng.lat + ",\"lon\":" + 
+            layer._latlng.lng + "}" + "' "; 
+        var _route = "route=\"" + feature.properties.routeNumber + "\" "; 
+        var _type = "type=\"button\" ";
+        var _style = "style=\"width:100%\" ";
+        var _class = "class=\"track-vehicle btn btn-default btn-xs\" ";
+        var _next_stop = "stop=\"" + feature.properties.nextLocID + "\" "; 
+        var _vehID = "veh-id=\"" + feature.properties.vehicleID + "\" ";
+        var btn = "<button "+  _type + _route + _class + _vehID + 
+            _next_stop + _style + _coord + ">Track</button>";
+       
+        //build popup and set content with html string
+        var popup = L.popup()
+            .setContent(feature.properties.signMessage + "<br>" + btn); 
+        return popup;
+    }
+
+    /* Takes as input data from TriMet's real time vehicle
+     * location API at http://developer.trimet.org/ws/v2/vehicles
+     * and new marker is constructed with that data.
+     * The map is cleared and the new marker is added and the view is updated.
+     */
+    THIS.moveVehicle = function(vehicleID, lat, lon) {
+       
+        // construct new feature and add it to map
+        //var layer = THIS.MAP_THIS.vehicleMarkers[vehicleID];
+        var geoJson = THIS.MAP.vehicleMarkers[vehicleID].toGeoJSON();
+        geoJson.features[0].geometry.coordinates = [lon, lat];
+        var newGeoJson = L.geoJson(geoJson, THIS.MAP.mapUtils.geoJsonOptionsFactory());
+        THIS.updateView(newGeoJson, lat, lon);
+        THIS.MAP.vehicleMarkers[vehicleID] = newGeoJson;
+    }
+
+    THIS.updateView = function(newGeoJson, lat, lon) {
+        THIS.clearVehicles();
+        THIS.MAP.vehicles.addLayer(newGeoJson);
+        THIS.MAP.map.panTo([lat, lon]);
+    }
+
+}
+
 
 function Map(params) {
 
@@ -57,6 +136,9 @@ function Map(params) {
     this.vehicleMarkers = {};
     this.tracking = null;
     this.currentVehicle = null;
+
+
+    this.mapUtils = new MapUtils(THIS);
 
     this.initmap = function() {
         // set up the map
@@ -100,27 +182,10 @@ function Map(params) {
         this.vehicles = new L.featureGroup().addTo(this.map);
     }
 
-    function clearVehicles() {
-        THIS.vehicles.clearLayers();
-        THIS.vehicleMarkers = {};
-    } 
-    
-    function buildPopup(feature, layer) {
-        var _coord = "coord='" + "{\"lat\":" + 
-            layer._latlng.lat + ",\"lon\":" + 
-            layer._latlng.lng + "}" + "' "; 
-        var _route = "route=\"" + feature.properties.routeNumber + "\" "; 
-        var _type = "type=\"button\" ";
-        var _style = "style=\"width:100%\" ";
-        var _class = "class=\"track-vehicle btn btn-default btn-xs\" ";
-        var _next_stop = "stop=\"" + feature.properties.nextLocID + "\" "; 
-        var _vehID = "veh-id=\"" + feature.properties.vehicleID + "\" ";
-
-        var btn = "<button "+  _type + _route + _class + _vehID + 
-            _next_stop + _style + _coord + ">Track</button>";
-        var popup = L.popup()
-            .setContent(feature.properties.signMessage + "<br>" + btn); 
-        return popup;
+    THIS.filterChange = function() {
+        if(THIS.currentVehicle != null) {
+            THIS.currentVehicle.stop();
+        }
     }
 
     //construct geojson for each vehicle returned from TriMet api
@@ -144,25 +209,11 @@ function Map(params) {
         return vehicle;
     }
 
-
-    function buildGeoJsonOptions() {
-        var options = {
-            pointToLayer: function(feature, latlng) {
-                return L.circleMarker(latlng, markerOptions);
-            },
-            
-            onEachFeature: function (feature, layer) {
-                layer.bindPopup(buildPopup(feature, layer));
-            }
-        }
-        return options;
-    }
-
     //create leaflet object and add to vehicles geoJSON layer
     function addVehicle(data) {
         if (THIS.dir == null || THIS.dir == data.direction) {
             var geoJson = new L.geoJson(
-                buildVehicleGeoJSON(data), buildGeoJsonOptions()
+                buildVehicleGeoJSON(data), THIS.mapUtils.geoJsonOptionsFactory()
             );
             THIS.vehicleMarkers[data.vehicleID] = geoJson;           
             THIS.vehicles.addLayer(geoJson);
@@ -195,7 +246,7 @@ function Map(params) {
 
         $.getJSON(THIS.WS_VEH, params ,function(data) {
           //TODO handle if error was returned from api 
-          clearVehicles();
+          THIS.mapUtils.clearVehicles();
           
           if(data.resultSet.hasOwnProperty('vehicle')) {
               for(var i = 0; i < data.resultSet.vehicle.length; i++) {
@@ -208,35 +259,14 @@ function Map(params) {
           }
         });
     }
-
-
-    /*
-    var onInterpolate = function() {
-        var MAP_THIS = this.MAP_THIS;
-        //console.log(this.cur_x);
-        //console.log(this.cur_y);
-        var latlng = proj4(PROJ[2913], PROJ[4326],
-            {"x":this.cur_x, "y":this.cur_y}); 
-        
-        var geoJson = MAP_THIS.vehicleMarkers[this.id].toGeoJSON();
-        geoJson.features[0].geometry.coordinates = [
-            latlng["x"], latlng["y"]
-        ];
-        clearVehicles();
-        var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
-        MAP_THIS.vehicles.addLayer(newGeoJson);
-        MAP_THIS.vehicleMarkers[this.id] = newGeoJson;
-    }
-    */
     
-    function VehicleStatus(map, url, appID) {
+    function VehicleTracking(map, url, appID) {
         var THIS = this;
-        var MAP_THIS = map;
+        THIS.MAP = map;
         THIS.id = null;
         THIS.appID = appID;
         THIS.url = url;
-        
-        THIS.interpolate = new Interpolate(MAP_THIS, buildGeoJsonOptions);
+        THIS.interpolate = new Interpolate(THIS.MAP);
 
         function build_params(id) {
             return {appID:THIS.appID, ids:THIS.id};
@@ -256,58 +286,48 @@ function Map(params) {
             return false;
         }
 
-        //make call and get updated vehicle location
-        //and next stop
-        //
-        //start interpolation
+        /* start tracking a vehicle */
         THIS.start = function(vehicleID) {
             THIS.id = vehicleID;
-
             var params = build_params();
             
             $.getJSON(THIS.url, params ,function(data) {
-                console.log(data);
-                var layer = MAP_THIS.vehicleMarkers[THIS.id];
+                // parse data
+                // move vehicle to starting location
+                // then start interpolating
                 var lat = data.resultSet.vehicle[0].latitude;
                 var lon = data.resultSet.vehicle[0].longitude;
                 var next_stop = data.resultSet.vehicle[0].nextLocID;
-                console.log(next_stop);
-                
-                var geoJson = MAP_THIS.vehicleMarkers[THIS.id].toGeoJSON();
-                geoJson.features[0].geometry.coordinates = [lon, lat];
-                
-                console.log(geoJson);
-                var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
-                clearVehicles();
-                MAP_THIS.vehicles.addLayer(newGeoJson);
-                MAP_THIS.map.panTo([lat, lon]);
-                MAP_THIS.vehicleMarkers[THIS.id] = newGeoJson;
-
+                THIS.lat = lat;
+                THIS.lon = lon;
+                THIS.MAP.mapUtils.moveVehicle(vehicleID, lat, lon);
                 THIS.interpolate.reset();
                 THIS.interpolate.start(lat, lon, next_stop, THIS.id);
-            
-                //clearInterval(THIS.tracking);
-                //THIS.tracking = setInterval(function() {
-                //    THIS.update();
-                //}, 5000);
+           
+                //start interval to lookup for updates to vehicle location
+                clearInterval(THIS.tracking_updates);
+                THIS.tracking_updates = setInterval(function() {
+                    THIS.update();
+                }, 5000);
             });
         }
 
+
+        /* stop tracking the vehicle */
         THIS.stop = function() {
             clearInterval(THIS.tracking);
         }
 
+        /* query TriMet vehicle locations api to look for
+            updates to vehicle currently being tracked
+         */
         THIS.update = function() {
             var params = build_params();
             
             $.getJSON(THIS.url, params ,function(data) {
-                console.log(data);
-                var layer = MAP_THIS.vehicleMarkers[THIS.id];
-                
                 var lat = data.resultSet.vehicle[0].latitude;
                 var lon = data.resultSet.vehicle[0].longitude;
                 var next_stop = data.resultSet.vehicle[0].nextLocID;
-                console.log(next_stop);
  
                 //update map and reset interpolation?
                 if(!same(lat, lon)) {
@@ -315,33 +335,18 @@ function Map(params) {
                     THIS.lat = lat;
                     THIS.lon = lon; 
                     
-                    //THIS.interpolate.reset();
-                    //THIS.interpolate.start(lat, lon, next_stop);
-
-                    //update vehicle on map
-                    
-                    /*
-                    var geoJson = MAP_THIS.vehicleMarkers[THIS.id].toGeoJSON();
-                    geoJson.features[0].geometry.coordinates = [THIS.lon, THIS.lat];
-                    var newGeoJson = L.geoJson(geoJson, buildGeoJsonOptions());
-                    clearVehicles();
-                    MAP_THIS.vehicles.addLayer(newGeoJson);
-                    MAP_THIS.map.panTo([THIS.lat, THIS.lon]);
-                    MAP_THIS.vehicleMarkers[THIS.id] = newGeoJson;
-                    
+                    THIS.MAP.mapUtils.moveVehicle(THIS.id, lat, lon);
                     THIS.interpolate.reset();
-                    THIS.interpolate.start(lat, lon, next_stop);
-                    */
+                    THIS.interpolate.start(lat, lon, next_stop, THIS.id);
                 }
             });
         }
     }
 
-
     THIS.trackVehicle = function(vehicleID) {
         //no vehicle has been tracked yet
         if(THIS.currentVehicle == null) {
-            THIS.currentVehicle = new VehicleStatus(THIS, THIS.WS_VEH, THIS.APPID);
+            THIS.currentVehicle = new VehicleTracking(THIS, THIS.WS_VEH, THIS.APPID);
         }
         THIS.currentVehicle.start(vehicleID);
     }
