@@ -2,7 +2,7 @@ from flask import request, jsonify, Blueprint
 
 from api import db, app, debug
 
-mod_api = Blueprint('api', __name__, url_prefix="/api")
+mod_api = Blueprint('api', __name__, url_prefix="")
 
 STOP_ID = "stop_id"
 

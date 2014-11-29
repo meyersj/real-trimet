@@ -266,7 +266,7 @@ function Map(params) {
         THIS.id = null;
         THIS.appID = appID;
         THIS.url = url;
-        THIS.interpolate = new Interpolate(THIS.MAP);
+        THIS.interpolate = new Interpolate(THIS.MAP, "http://api.meyersj.com/stop_lookup");
 
         function build_params(id) {
             return {appID:THIS.appID, ids:THIS.id};

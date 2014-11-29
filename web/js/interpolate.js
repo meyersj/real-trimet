@@ -1,7 +1,8 @@
-function Interpolate(map) {
+function Interpolate(map, url) {
     
     var THIS = this;
     THIS.MAP = map;
+    THIS.lookup = url;
     THIS.id = null;
     THIS.speed = 19; //19 fps == 13 mph
     THIS.id = null;
@@ -66,7 +67,7 @@ function Interpolate(map) {
         console.log(current);        
         
         var params = {"stop_id":next_stop};
-        var url = "http://meyersj.com/api/stop_lookup";
+        var url = THIS.lookup; //"http://api.meyersj.com/api/stop_lookup";
         
         //initalize new stop coordinates and name 
         $.getJSON(url, params, function(data) {
