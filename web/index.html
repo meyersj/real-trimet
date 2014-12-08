@@ -108,16 +108,24 @@
       map.initmap();
 
 
-function onLocationFound(e) {
-    var radius = e.accuracy / 2;
+    function onLocationFound(e) {
+        var radius = e.accuracy / 2;
+        console.log("location found");
 
-    L.marker(e.latlng).addTo(map)
-        .bindPopup("You are within " + radius + " meters from this point").openPopup();
+        L.marker(e.latlng).addTo(map.map)
+            .bindPopup("You are within " + radius + " meters from this point").openPopup();
 
-    L.circle(e.latlng, radius).addTo(map);
-}
+        L.circle(e.latlng, radius).addTo(map.map);
+    }
 
-map.on('locationfound', onLocationFound);
+    function onLocationError(e) {
+        console.log("location error");
+    }
+
+    map.map.on('locationerror', onLocationError);
+    map.map.on('locationfound', onLocationFound);
+
+    map.map.locate();
 
 
       var selectedRoute = null;
